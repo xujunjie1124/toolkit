@@ -5,11 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.gg4703.toolkit.support.DataSet;
 import com.gg4703.toolkit.support.ExcelSheet;
+import com.gg4703.toolkit.support.Record;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
@@ -24,6 +26,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+@SuppressWarnings("ALL")
 public class ExcelOperClass {
     private static String EXCEL_2003 = ".xls";
     private static String EXCEL_2007 = ".xlsx";
@@ -83,7 +86,6 @@ public class ExcelOperClass {
                         String[] columns = dataList.get(i);
                         for (int j = 0; j < columns.length; j++) {
                             String value = columns[j];
-                            System.out.println(value);
                             Cell cell = row.createCell(j);
                             cell.setCellValue(columns[j]);
                         }
@@ -209,10 +211,10 @@ public class ExcelOperClass {
                 cell.setCellType(HSSFCell.CELL_TYPE_STRING);
                 String cellValue = "";
                 int cellValueType = cell.getCellType();
-                if (cellValueType == cell.CELL_TYPE_STRING) {
+                if (cellValueType == Cell.CELL_TYPE_STRING) {
                     cellValue = cell.getStringCellValue();
                 }
-                if (cellValueType == cell.CELL_TYPE_NUMERIC) {
+                if (cellValueType == Cell.CELL_TYPE_NUMERIC) {
                     Double number = cell.getNumericCellValue();
                     System.out.println("字符串+++==========" + number.intValue());
                     cellValue = cell.getNumericCellValue() + "";
@@ -235,10 +237,10 @@ public class ExcelOperClass {
                 cell.setCellType(XSSFCell.CELL_TYPE_STRING);
                 String cellValue = "";
                 int cellValueType = cell.getCellType();
-                if (cellValueType == cell.CELL_TYPE_STRING) {
+                if (cellValueType == Cell.CELL_TYPE_STRING) {
                     cellValue = cell.getStringCellValue();
                 }
-                if (cellValueType == cell.CELL_TYPE_NUMERIC) {
+                if (cellValueType == Cell.CELL_TYPE_NUMERIC) {
                     Double number = cell.getNumericCellValue();
                     System.out.println("字符串+++==========" + number.toString());
                     cellValue = cell.getNumericCellValue() + "";
@@ -324,11 +326,34 @@ public class ExcelOperClass {
 
         DataSet dataSet = new DataSet();
         dataSet.setSheetList(sheetList);
-        writeExcelPOI("D:\\sampel1.xlsx", dataSet);
+        writeExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/template.xls", dataSet);
     }
 
     public static void main(String[] args) throws Exception {
-//        writeSample();
-        readSample2003();
+        // 读取数据
+        Reader reader = new CSVReader();
+        List<Record> records = reader.read(null);
+
+        //写入模板
+        try {
+            DataSet dataSet = readExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/template.xls", 0);
+            List<ExcelSheet> sheetList = dataSet.getSheetList();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            for (ExcelSheet excelSheet : sheetList) {
+
+                //data
+                List<String[]> dataList = new ArrayList<>();
+                for(Record record : records){
+                    String[] item = new String[]{record.getTransactionType(),formatter.format(record.getDate()),null,null,record.getMember(),null,record.getAmount().toString(),record.getMember(),null,null,record.getRemark()};
+                    dataList.add(item);
+                }
+                excelSheet.setDatasList(dataList);
+                break;
+            }
+            dataSet.setSheetList(sheetList);
+            writeExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/template1.xls", dataSet);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

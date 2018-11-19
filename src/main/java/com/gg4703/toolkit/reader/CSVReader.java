@@ -11,9 +11,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"ALL", "AlibabaRemoveCommentedCode"})
 public class CSVReader implements Reader {
 
 
+    @SuppressWarnings("AlibabaRemoveCommentedCode")
     @Override
     public List<Record> read(String file) throws Exception {
         String filePath = "/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/userdata-jj-9-utf8.csv";
@@ -25,7 +27,8 @@ public class CSVReader implements Reader {
 
             // 读表头
             csvReader.readHeaders();
-            while (csvReader.readRecord()) {
+            while (csvReader.readRecord()) //noinspection AlibabaRemoveCommentedCode
+            {
                 Record record = new Record();
                 record.setTransactionType("支出");
                 record.setDate(DateUtils.parseDate(csvReader.get(1), "yyyy-MM-dd"));
