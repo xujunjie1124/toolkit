@@ -7,12 +7,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.gg4703.toolkit.support.DataSet;
 import com.gg4703.toolkit.support.ExcelSheet;
 import com.gg4703.toolkit.support.Record;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -103,6 +106,7 @@ public class ExcelOperClass {
 
     /**
      * 读取Excel2003的表单
+     *
      * @param excelFile
      * @return
      * @throws Exception
@@ -134,7 +138,7 @@ public class ExcelOperClass {
                     //System.out.println("===========");
                     String[] datas = readRowCellValue2003(row);
                     datasList.add(datas);
-                }else{
+                } else {
                     if (j == 0) {// 默认第一行为表头
                         headers = readRowCellValue2003(row);
                     }
@@ -199,7 +203,7 @@ public class ExcelOperClass {
         return dataSet;
     }
 
-    private static String[] readRowCellValue2003(HSSFRow row){
+    private static String[] readRowCellValue2003(HSSFRow row) {
         Integer cellNum = (int) row.getLastCellNum();
         String[] datas = new String[cellNum];
         for (int k = 0; k < cellNum; k++) {
@@ -225,7 +229,7 @@ public class ExcelOperClass {
         return datas;
     }
 
-    private static String[] readRowCellValue2007(XSSFRow row){
+    private static String[] readRowCellValue2007(XSSFRow row) {
         Integer cellNum = (int) row.getLastCellNum();
         String[] datas = new String[cellNum];
         for (int k = 0; k < cellNum; k++) {
@@ -254,7 +258,7 @@ public class ExcelOperClass {
     /**
      * 读取样例2003
      */
-    private static void readSample2003(){
+    private static void readSample2003() {
         try {
             DataSet dataSet = readExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/template.xls", 0);
             System.out.println("================================");
@@ -281,7 +285,7 @@ public class ExcelOperClass {
     /**
      * 读取样例2007
      */
-    private static void readSample2007(){
+    private static void readSample2007() {
         try {
             DataSet dataSet = readExcelPOI("D:\\工作簿1.xlsx", 0);
             System.out.println("================================");
@@ -307,17 +311,18 @@ public class ExcelOperClass {
 
     /**
      * 写入样例
+     *
      * @throws Exception
      */
-    private static void writeSample() throws Exception{
+    private static void writeSample() throws Exception {
         List<ExcelSheet> sheetList = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             ExcelSheet excelSheet = new ExcelSheet();
-            excelSheet.setSheetName("Sheet样例"+(i+1));
-            excelSheet.setHeaders(new String[]{"列表1","列表2"});
+            excelSheet.setSheetName("Sheet样例" + (i + 1));
+            excelSheet.setHeaders(new String[]{"列表1", "列表2"});
             List<String[]> datasList = new ArrayList<>();
             for (int j = 0; j < 20; j++) {
-                String[] data = new String[]{"数据Cell0"+(j+1),"数据Cell1"+(j+1)};
+                String[] data = new String[]{"数据Cell0" + (j + 1), "数据Cell1" + (j + 1)};
                 datasList.add(data);
             }
             excelSheet.setDatasList(datasList);
@@ -336,6 +341,22 @@ public class ExcelOperClass {
 
         //写入模板
         try {
+            //读取历史数据生成分类池
+            Map<String, String> categoryMap = new HashMap<String, String>();
+            DataSet myMoneyDataSet = readExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/myMoney.xls", 0);
+            List<ExcelSheet> myMoneySheetList = myMoneyDataSet.getSheetList();
+            for (ExcelSheet excelSheet : myMoneySheetList) {
+                List<String[]> dataList = excelSheet.getDatasList();
+                for (String[] data : dataList) {
+                    if (StringUtils.isNotBlank(data[10])) {
+                        if(data[10].indexOf("京东") != -1){
+                            continue;
+                        }
+                        categoryMap.put(StringUtils.strip(data[10], "\""), StringUtils.strip(data[1], "\"") + "," + StringUtils.strip(data[2], "\""));
+                    }
+                }
+            }
+
             DataSet dataSet = readExcelPOI("/Users/xujunjie3/Work/IdeaProjects/toolkit/src/main/resources/thirdParty/template.xls", 0);
             List<ExcelSheet> sheetList = dataSet.getSheetList();
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -343,8 +364,21 @@ public class ExcelOperClass {
 
                 //data
                 List<String[]> dataList = new ArrayList<>();
-                for(Record record : records){
-                    String[] item = new String[]{record.getTransactionType(),formatter.format(record.getDate()),null,null,record.getMember(),null,record.getAmount().toString(),record.getMember(),null,null,record.getRemark()};
+                for (Record record : records) {
+                    // 获取分类
+                    String category = null;
+                    String subCategory = null;
+                    String remark = record.getRemark();
+                    if (StringUtils.isNotBlank(remark)) {
+                        String content = categoryMap.get(StringUtils.strip(remark));
+                        if (StringUtils.isNotBlank(content)) {
+                            String[] str = content.split(",");
+                            category = str[0];
+                            subCategory = str[1];
+                        }
+                    }
+
+                    String[] item = new String[]{record.getTransactionType(), formatter.format(record.getDate()), category, subCategory, record.getAccountType(), null, record.getAmount().toString(), record.getMember(), null, null, record.getRemark()};
                     dataList.add(item);
                 }
                 excelSheet.setDatasList(dataList);
